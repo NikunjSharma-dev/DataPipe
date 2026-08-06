@@ -1,0 +1,5 @@
+storage: datapipe.db
+sources:
+  - data
+  - examples
+session: hackathon-demo
