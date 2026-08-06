@@ -1,0 +1,22 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build & Dist
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+ENV/
+
+# SQLite temporary DB files (keep example configs, ignore run artifacts)
+*.db
+*.db-shm
+*.db-wal

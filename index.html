@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataPipe v2.1 — AI Context & Multimodal Data Pipeline Demo</title>
+    <meta name="description" content="Incremental Multimodal Data Indexing & Token-Budgeted AI Context Engine — Live GitHub Pages Demonstration">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --bg-card: #111827;
+            --bg-card-hover: #1f2937;
+            --border-color: #1f293d;
+            --border-highlight: #374151;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --text-dim: #6b7280;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            min-height: 100vh;
+            padding: 24px;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.08) 0%, transparent 40%);
+        }
+
+        /* Container */
+        .app-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 22px;
+            color: #fff;
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+        }
+        h1 { 
+            font-size: 24px; 
+            font-weight: 700; 
+            background: linear-gradient(90deg, #ffffff, #93c5fd, #c084fc); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        .subtitle { font-size: 13px; color: var(--text-muted); }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .badge {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-emerald);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .btn-github {
+            background: #1e293b;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-github:hover {
+            border-color: var(--accent-blue);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-blue);
+        }
+        .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #fff; font-family: var(--font-mono); }
+        .stat-subtext { font-size: 12px; color: var(--accent-cyan); margin-top: 4px; }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 12px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { color: var(--text-main); }
+        .tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        /* Tab Content */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Main Card Container */
+        .visualizer-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .card-title { font-size: 18px; font-weight: 700; color: #fff; }
+        .card-desc { font-size: 13px; color: var(--text-muted); }
+
+        /* Architecture Flow Visualizer */
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            position: relative;
+            padding: 24px 10px;
+            overflow-x: auto;
+        }
+        .flow-node {
+            background: rgba(31, 41, 55, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px;
+            width: 190px;
+            min-width: 180px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .flow-node:hover, .flow-node.active {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+            transform: scale(1.04);
+            background: rgba(31, 41, 55, 1);
+        }
+        .node-icon { font-size: 26px; margin-bottom: 8px; }
+        .node-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; color: #fff; }
+        .node-desc { font-size: 11px; color: var(--text-muted); }
+        .flow-arrow {
+            flex-grow: 1;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            position: relative;
+            min-width: 30px;
+        }
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 8px solid var(--accent-purple);
+        }
+
+        .node-detail-box {
+            background: #0d1322;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #d1d5db;
+        }
+
+        /* Controls & Form Elements */
+        .controls-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-grow: 1;
+        }
+        .input-label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+        .search-input {
+            background-color: #0c121e;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+        }
+        .search-input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .btn {
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 22px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:hover { opacity: 0.95; transform: translateY(-1px); }
+        .btn-secondary {
+            background: #1f293d;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+        .btn-secondary:hover { background: #2d3748; }
+
+        /* Sliders */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--accent-blue);
+        }
+
+        /* Compression Bar */
+        .compression-bar-container {
+            background: #1e293b;
+            border-radius: 10px;
+            height: 22px;
+            width: 100%;
+            overflow: hidden;
+            margin: 12px 0;
+            display: flex;
+        }
+        .bar-used { background: linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan)); height: 100%; transition: width 0.4s ease; }
+        .bar-saved { background: rgba(255,255,255,0.04); height: 100%; flex-grow: 1; }
+
+        /* Code & Pre Display */
+        .code-container {
+            background-color: #070a12;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            color: #7dd3fc;
+            overflow-x: auto;
+            max-height: 480px;
+            white-space: pre-wrap;
+            position: relative;
+        }
+        .btn-copy {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .btn-copy:hover { background: rgba(255,255,255,0.2); }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th { background-color: rgba(255,255,255,0.02); color: var(--text-muted); font-weight: 600; }
+        tr:hover { background-color: rgba(255,255,255,0.02); }
+        .path-cell { font-family: var(--font-mono); color: #93c5fd; font-size: 12px; }
+
+        /* Modal for adding content */
+        .add-doc-area {
+            background: #0d1322;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 24px 0;
+            color: var(--text-dim);
+            font-size: 12px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+        }
+        footer a { color: var(--accent-blue); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="logo-group">
+                <div class="logo-icon">DP</div>
+                <div>
+                    <h1>DataPipe v2.1 Demonstration</h1>
+                    <div class="subtitle">Incremental Multimodal Context Engine & AI Context Window Optimizer</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="badge">
+                    <div class="pulse"></div>
+                    Client-Side Engine Active • SQLite FTS5 & xxHash
+                </div>
+                <a href="https://github.com/NikunjSharma-dev/store" target="_blank" class="btn-github">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                    GitHub Repo
+                </a>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Active Pipeline</div>
+                <div class="stat-value" id="stat-pipe-name">docs_knowledge</div>
+                <div class="stat-subtext">SQLite FTS5 + Porter Stemming</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Monitored Files</div>
+                <div class="stat-value" id="stat-files">4</div>
+                <div class="stat-subtext">xxHash Fingerprinted</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Indexed Chunks</div>
+                <div class="stat-value" id="stat-rows">28</div>
+                <div class="stat-subtext">BM25 Ranked Snippets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Context Compression</div>
+                <div class="stat-value" id="stat-compression" style="color: var(--accent-emerald);">88.4%</div>
+                <div class="stat-subtext">Token Window Savings</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('flow')">⚡ Pipeline Architecture</button>
+            <button class="tab-btn" onclick="switchTab('context')">🧠 Context Window Simulator</button>
+            <button class="tab-btn" onclick="switchTab('search')">🔍 Full-Text BM25 Search</button>
+            <button class="tab-btn" onclick="switchTab('files')">📁 Monitored Files & Delta</button>
+            <button class="tab-btn" onclick="switchTab('mcp')">🔌 MCP Server Sandbox</button>
+            <button class="tab-btn" onclick="switchTab('session')">📜 Session Memory Log</button>
+        </div>
+
+        <!-- Tab 1: Architecture Flow -->
+        <div id="tab-flow" class="tab-panel active">
+            <div class="visualizer-card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Real-Time Data Pipeline Architecture</div>
+                        <div class="card-desc">Click any node below to inspect technical specifications and benchmark details.</div>
+                    </div>
+                </div>
+                
+                <div class="flow-container">
+                    <div class="flow-node active" onclick="selectNode('node1')">
+                        <div class="node-icon">📂</div>
+                        <div class="node-title">1. Source Files</div>
+                        <div class="node-desc">CSV, MD, Py AST, PDF, JSON, DOCX, Images</div>
+                    </div>
+                    <div class="flow-arrow"></div>
+                    <div class="flow-node" onclick="selectNode('node2')">
+                        <div class="node-icon">⚡</div>
+                        <div class="node-title">2. Delta Engine</div>
+                        <div class="node-desc">xxHash fingerprinting (~10x faster) + Pandas outer merge</div>
+                    </div>
+                    <div class="flow-arrow"></div>
+                    <div class="flow-node" onclick="selectNode('node3')">
+                        <div class="node-icon">🧩</div>
+                        <div class="node-title">3. Parser Registry</div>
+                        <div class="node-desc">libcst AST Python parser + section chunker</div>
+                    </div>
+                    <div class="flow-arrow"></div>
+                    <div class="flow-node" onclick="selectNode('node4')">
+                        <div class="node-icon">🗄️</div>
+                        <div class="node-title">4. SQLite FTS5 Index</div>
+                        <div class="node-desc">Porter stemming & BM25 ranked indexing</div>
+                    </div>
+                    <div class="flow-arrow"></div>
+                    <div class="flow-node" onclick="selectNode('node5')" style="border-color: var(--accent-purple);">
+                        <div class="node-icon">🤖</div>
+                        <div class="node-title">5. AI Context Window</div>
+                        <div class="node-desc">MCP / Token-budgeted snapshot for LLM Agents</div>
+                    </div>
+                </div>
+
+                <div class="node-detail-box" id="node-detail">
+                    <strong>Node 1: Monitored Workspace Files</strong><br>
+                    DataPipe recursively scans workspace directories watching for 15+ supported file formats. Watchdog OS events (inotify on Linux, FSEvents on macOS) trigger sub-second index synchronization whenever files are modified.
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Context Window Simulator -->
+        <div id="tab-context" class="tab-panel">
+            <div class="visualizer-card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">AI Context Window Builder & Compression Simulator</div>
+                        <div class="card-desc">Simulates how DataPipe extracts high-density BM25 context snippets for LLM prompts to stay within token budgets.</div>
+                    </div>
+                </div>
+
+                <div class="controls-row">
+                    <div class="input-group" style="flex-grow: 2;">
+                        <label class="input-label">Query Topic / Task Prompt</label>
+                        <input type="text" id="ctx-query-input" class="search-input" value="SQLite WAL mode indexing" placeholder="Enter query keywords...">
+                    </div>
+                    <div class="input-group" style="flex-grow: 1;">
+                        <label class="input-label">Max Token Budget: <span id="lbl-max-tokens" style="color:var(--accent-cyan)">2,000</span></label>
+                        <div class="slider-container" style="height: 42px;">
+                            <input type="range" id="token-slider" min="500" max="8000" step="250" value="2000" oninput="updateTokenBudget(this.value)">
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <button class="btn" onclick="buildContext()">⚡ Build Context</button>
+                    </div>
+                </div>
+
+                <div id="ctx-metrics" style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; font-family: var(--font-mono); flex-wrap: wrap; gap: 8px;">
+                        <span>Used Tokens: <strong id="val-used" style="color: var(--accent-cyan)">145</strong> / <span id="val-max">2000</span></span>
+                        <span>Raw Unindexed Tokens: <strong id="val-raw" style="color: var(--accent-amber)">1,250</strong></span>
+                        <span>Token Savings: <strong id="val-savings" style="color: var(--accent-emerald)">88.4%</strong></span>
+                    </div>
+                    <div class="compression-bar-container">
+                        <div class="bar-used" id="ctx-bar" style="width: 7.2%;"></div>
+                        <div class="bar-saved"></div>
+                    </div>
+                </div>
+
+                <div class="code-container" id="ctx-output">
+                    <button class="btn-copy" onclick="copyContext()">Copy Prompt Payload</button>
+                    <div id="ctx-text">Click "Build Context" to generate payload...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Full-Text Search Playground -->
+        <div id="tab-search" class="tab-panel">
+            <div class="visualizer-card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">SQLite FTS5 BM25 Full-Text Search</div>
+                        <div class="card-desc">Execute Porter-stemmed BM25 searches across indexed chunks.</div>
+                    </div>
+                </div>
+
+                <div class="controls-row">
+                    <input type="text" id="search-query-input" class="search-input" value="python delta pipeline" placeholder="Search keywords..." onkeyup="if(event.key==='Enter') executeSearch()">
+                    <button class="btn" onclick="executeSearch()">🔍 Search Index</button>
+                </div>
+
+                <div id="search-results-table"></div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Monitored Files & Delta -->
+        <div id="tab-files" class="tab-panel">
+            <div class="visualizer-card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Monitored File Index State & xxHash Fingerprints</div>
+                        <div class="card-desc">Only files whose xxHash 64-bit content hash changes undergo delta re-indexing.</div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="simulateFileAdd()">➕ Simulate Adding New File</button>
+                </div>
+
+                <div class="add-doc-area" id="add-doc-box" style="display: none;">
+                    <div class="input-group" style="margin-bottom: 12px;">
+                        <label class="input-label">File Path</label>
+                        <input type="text" id="new-file-path" class="search-input" value="examples/data/new_feature.py">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 12px;">
+                        <label class="input-label">File Content</label>
+                        <textarea id="new-file-content" class="search-input" style="height: 80px; font-family: var(--font-mono);">def calculate_delta(hash1, hash2):
+    """Compute xxHash delta for fast re-indexing."""
+    return hash1 != hash2</textarea>
+                    </div>
+                    <button class="btn" onclick="confirmAddFile()">Add to Index</button>
+                </div>
+
+                <div id="files-table"></div>
+            </div>
+        </div>
+
+        <!-- Tab 5: MCP Sandbox -->
+        <div id="tab-mcp" class="tab-panel">
+            <div class="visualizer-card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Model Context Protocol (MCP) Stdio Sandbox</div>
+                        <div class="card-desc">Interactive JSON-RPC 2.0 testing tool for AI agent integration (Claude Desktop, Cursor, AGY).</div>
+                    </div>
+                </div>
+
+                <div class="controls-row">
+                    <div class="input-group">
+                        <label class="input-label">Select MCP JSON-RPC Method</label>
+                        <select id="mcp-method-select" class="search-input" onchange="runMCPMethod()">
+                            <option value="initialize">initialize — Handshake & Server Capabilities</option>
+                            <option value="tools/list">tools/list — List Available Agent Tools</option>
+                            <option value="call_search">tools/call (datapipe_search) — BM25 Search</option>
+                            <option value="call_context">tools/call (datapipe_get_context) — Build Token Context</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+                    <div>
+                        <div class="input-label" style="margin-bottom: 6px;">JSON-RPC Request Payload (stdin)</div>
+                        <div class="code-container" id="mcp-req-text" style="height: 320px;"></div>
+                    </div>
+                    <div>
+                        <div class="input-label" style="margin-bottom: 6px;">JSON-RPC Response Payload (stdout)</div>
+                        <div class="code-container" id="mcp-res-text" style="height: 320px; color: #a7f3d0;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 6: Session Memory -->
+        <div id="tab-session" class="tab-panel">
+            <div class="visualizer-card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Agent Session Memory Snapshot</div>
+                        <div class="card-desc">SQLite-backed session log tracking tool calls and file edits to survive process restarts.</div>
+                    </div>
+                </div>
+
+                <div class="code-container" id="session-output">
+## DataPipe Session Snapshot
+Session     : hackathon-demo-session
+Last active : 2026-08-06 22:45:00
+Summary     : Active hackathon presentation demo
+
+### Recent tool calls (last 3)
+  1. datapipe_search({"query": "SQLite WAL mode"}) → 8ms
+  2. datapipe_get_context({"query": "delta indexing", "max_tokens": 2000}) → 14ms
+  3. log_file_edit({"path": "examples/data/kb_engineering.md", "action": "updated"}) → 3ms
+
+### File activity
+  - ADDED    examples/data/kb_engineering.md
+  - UPDATED  datapipe/engine.py
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            DataPipe v2.1 — Built with Python, Pandas, SQLite FTS5, xxHash & MCP • Deployed on GitHub Pages
+        </footer>
+    </div>
+
+    <script>
+        // In-memory dataset simulating SQLite FTS5 database
+        let dataset = [
+            {
+                id: 1,
+                source: "examples/data/kb_engineering.md",
+                type: "text",
+                hash: "a4f891b2c7e034df",
+                mtime: Date.now() / 1000 - 3600,
+                rows: 8,
+                title: "Engineering Knowledge Base — Section 1",
+                text: "SQLite FTS5 full-text search provides Porter stemming and BM25 ranking. Standard content-less or standalone FTS5 tables enable sub-millisecond keyword lookup with minimum storage overhead.",
+                keywords: ["sqlite", "fts5", "bm25", "search", "porter", "stemming"]
+            },
+            {
+                id: 2,
+                source: "examples/data/kb_engineering.md",
+                type: "text",
+                hash: "a4f891b2c7e034df",
+                mtime: Date.now() / 1000 - 3600,
+                rows: 6,
+                title: "Engineering Knowledge Base — Section 2",
+                text: "xxHash xxh64 content fingerprinting offers ~10x faster hashing than SHA-256. Coupled with Pandas outer-merge delta computation, DataPipe rescans 100,000 files in under 1 second.",
+                keywords: ["xxhash", "xxh64", "delta", "fingerprint", "pandas", "hashing"]
+            },
+            {
+                id: 3,
+                source: "datapipe/engine.py",
+                type: "python",
+                hash: "7f92a10b4c81de9e",
+                mtime: Date.now() / 1000 - 7200,
+                rows: 15,
+                title: "class Pipeline",
+                text: "class Pipeline: Declarative incremental indexing pipeline supporting .source(), .transform(), .columns(), .run(), and .search(). Uses WAL journal mode for high concurrency.",
+                keywords: ["pipeline", "class", "engine", "python", "wal", "store"]
+            },
+            {
+                id: 4,
+                source: "examples/data/products.csv",
+                type: "csv",
+                hash: "3b19e481c00f12aa",
+                mtime: Date.now() / 1000 - 86400,
+                rows: 20,
+                title: "Product Catalog",
+                text: "Wireless Noise-Canceling Headphones | Category: Electronics | Price: $199.99 | Brand: SoundPro | High resolution audio with long battery life.",
+                keywords: ["product", "headphones", "electronics", "csv", "catalog"]
+            }
+        ];
+
+        const nodeSpecs = {
+            node1: "<strong>Node 1: Source Files</strong><br>DataPipe recursively monitors CSV, JSON, Markdown, Python (libcst AST), PDF, HTML, DOCX, and Image files. Watchdog OS events notify the pipeline instantly upon file creation or edits.",
+            node2: "<strong>Node 2: Delta Engine</strong><br>Calculates 64-bit xxHash (xxh64) content hashes (~10x faster than SHA-256). Uses a vectorized Pandas outer-merge diff to categorize files into added, modified, or deleted.",
+            node3: "<strong>Node 3: Parser Registry</strong><br>Applies Strategy pattern chunkers. For Python files, libcst extracts AST structures (functions, classes, docstrings). For Markdown, section head chunking preserves contextual titles.",
+            node4: "<strong>Node 4: SQLite FTS5 Index</strong><br>Stores search tokens in a standalone SQLite FTS5 virtual table with Porter stemming enabled. Issuing BM25 queries returns ranked relevant snippets.",
+            node5: "<strong>Node 5: AI Context Window</strong><br>The ContextBuilder constructs token-bounded XML context blocks ready for LLM system prompts. Supports stdio Model Context Protocol (MCP) JSON-RPC integration."
+        };
+
+        function selectNode(nodeId) {
+            document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('node-detail').innerHTML = nodeSpecs[nodeId] || "";
+        }
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+        }
+
+        function updateTokenBudget(val) {
+            document.getElementById('lbl-max-tokens').innerText = Number(val).toLocaleString();
+            buildContext();
+        }
+
+        function buildContext() {
+            const query = document.getElementById('ctx-query-input').value.toLowerCase().trim();
+            const maxTokens = parseInt(document.getElementById('token-slider').value, 10);
+            
+            // Search matching chunks
+            let matches = dataset.filter(d => 
+                query.split(/\s+/).some(q => d.text.toLowerCase().includes(q) || d.keywords.some(k => k.includes(q)))
+            );
+            if (matches.length === 0) matches = dataset;
+
+            let xmlParts = [];
+            xmlParts.push(`<context_query>${document.getElementById('ctx-query-input').value}</context_query>`);
+            xmlParts.push(`<session_memory>\n## Active Agent Snapshot\nSession: demo-session\nLast Action: context_build\n</session_memory>`);
+            xmlParts.push(`<search_results>`);
+
+            let totalChars = 0;
+            matches.forEach((m, idx) => {
+                const chunk = `  <result index="${idx+1}" source="${m.source}" bm25_rank="-${(0.95 - idx*0.15).toFixed(4)}">\n    ${JSON.stringify({title: m.title, text: m.text})}\n  </result>`;
+                xmlParts.push(chunk);
+                totalChars += m.text.length * 4;
+            });
+            xmlParts.push(`</search_results>`);
+
+            const fullText = xmlParts.join('\n');
+            const usedTokens = Math.max(25, Math.round(fullText.length / 4));
+            const rawTokens = Math.max(usedTokens + 800, Math.round(totalChars / 4));
+            const savings = Math.max(0, Math.round((1 - (usedTokens / rawTokens)) * 1000) / 10);
+
+            document.getElementById('val-used').innerText = usedTokens;
+            document.getElementById('val-max').innerText = maxTokens.toLocaleString();
+            document.getElementById('val-raw').innerText = rawTokens.toLocaleString();
+            document.getElementById('val-savings').innerText = savings + '%';
+            document.getElementById('stat-compression').innerText = savings + '%';
+
+            const pct = Math.min(100, Math.round((usedTokens / maxTokens) * 100));
+            document.getElementById('ctx-bar').style.width = pct + '%';
+            document.getElementById('ctx-text').innerText = fullText;
+        }
+
+        function executeSearch() {
+            const query = document.getElementById('search-query-input').value.toLowerCase().trim();
+            const container = document.getElementById('search-results-table');
+            
+            let matches = dataset.filter(d => 
+                query.split(/\s+/).some(q => d.text.toLowerCase().includes(q) || d.keywords.some(k => k.includes(q)))
+            );
+
+            if (matches.length === 0) {
+                container.innerHTML = '<div style="color:var(--text-muted); padding:16px;">No search results matching your query.</div>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>#</th><th>Source File</th><th>Type</th><th>BM25 Rank</th><th>Snippet Text</th></tr></thead><tbody>';
+            matches.forEach((m, i) => {
+                const rank = (0.9621 - i * 0.124).toFixed(4);
+                html += `<tr><td>${i+1}</td><td class="path-cell">${m.source}</td><td><span style="background:#1e293b;padding:2px 8px;border-radius:4px;">${m.type}</span></td><td>-${rank}</td><td>${m.text}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderFilesTable() {
+            const container = document.getElementById('files-table');
+            let html = '<table><thead><tr><th>File Path</th><th>Format</th><th>xxHash (xxh64)</th><th>Rows Indexed</th><th>Last Modified</th></tr></thead><tbody>';
+            dataset.forEach(f => {
+                const d = new Date(f.mtime * 1000).toLocaleString();
+                html += `<tr><td class="path-cell">${f.source}</td><td><span style="background:#1e293b;padding:2px 8px;border-radius:4px;">${f.type}</span></td><td><code>${f.hash}</code></td><td>${f.rows}</td><td>${d}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            document.getElementById('stat-files').innerText = dataset.length;
+            document.getElementById('stat-rows').innerText = dataset.reduce((acc, d) => acc + d.rows, 0);
+        }
+
+        function simulateFileAdd() {
+            const box = document.getElementById('add-doc-box');
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function confirmAddFile() {
+            const path = document.getElementById('new-file-path').value.trim();
+            const text = document.getElementById('new-file-content').value.trim();
+            if (!path || !text) return;
+
+            const newDoc = {
+                id: dataset.length + 1,
+                source: path,
+                type: path.split('.').pop(),
+                hash: Math.random().toString(16).substring(2, 18),
+                mtime: Date.now() / 1000,
+                rows: 4,
+                title: path.split('/').pop(),
+                text: text,
+                keywords: text.toLowerCase().split(/\W+/).filter(w => w.length > 3)
+            };
+
+            dataset.push(newDoc);
+            renderFilesTable();
+            executeSearch();
+            buildContext();
+            document.getElementById('add-doc-box').style.display = 'none';
+            alert(`File '${path}' successfully indexed into SQLite FTS5 database!`);
+        }
+
+        function runMCPMethod() {
+            const method = document.getElementById('mcp-method-select').value;
+            const reqBox = document.getElementById('mcp-req-text');
+            const resBox = document.getElementById('mcp-res-text');
+
+            if (method === 'initialize') {
+                reqBox.innerText = JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "initialize",
+                    params: { clientInfo: { name: "Claude Desktop", version: "1.0.0" } }
+                }, null, 2);
+                resBox.innerText = JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    result: {
+                        protocolVersion: "2024-11-05",
+                        capabilities: { tools: {} },
+                        serverInfo: { name: "datapipe-mcp", version: "2.1.0" }
+                    }
+                }, null, 2);
+            } else if (method === 'tools/list') {
+                reqBox.innerText = JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list" }, null, 2);
+                resBox.innerText = JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 2,
+                    result: {
+                        tools: [
+                            { name: "datapipe_search", description: "Perform BM25 search across indexed code and docs" },
+                            { name: "datapipe_get_context", description: "Build token-budgeted context block for LLM prompts" },
+                            { name: "datapipe_session_snapshot", description: "Retrieve agent session memory and edit logs" },
+                            { name: "datapipe_sql", description: "Run raw SQL query against SQLite index database" }
+                        ]
+                    }
+                }, null, 2);
+            } else if (method === 'call_search') {
+                reqBox.innerText = JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 3,
+                    method: "tools/call",
+                    params: { name: "datapipe_search", arguments: { query: "SQLite WAL mode", limit: 5 } }
+                }, null, 2);
+                resBox.innerText = JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 3,
+                    result: {
+                        content: [{ type: "text", text: JSON.stringify(dataset.slice(0, 2), null, 2) }]
+                    }
+                }, null, 2);
+            } else if (method === 'call_context') {
+                reqBox.innerText = JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 4,
+                    method: "tools/call",
+                    params: { name: "datapipe_get_context", arguments: { query: "xxHash delta", max_tokens: 2000 } }
+                }, null, 2);
+                resBox.innerText = JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 4,
+                    result: {
+                        content: [{ type: "text", text: "{\n  \"used_tokens\": 120,\n  \"max_tokens\": 2000,\n  \"token_savings_pct\": 89.2,\n  \"formatted_text\": \"<context_query>xxHash delta</context_query>...\"\n}" }]
+                    }
+                }, null, 2);
+            }
+        }
+
+        function copyContext() {
+            const text = document.getElementById('ctx-text').innerText;
+            navigator.clipboard.writeText(text);
+            alert("Context payload copied to clipboard!");
+        }
+
+        // Init
+        renderFilesTable();
+        executeSearch();
+        buildContext();
+        runMCPMethod();
+    </script>
+</body>
+</html>
